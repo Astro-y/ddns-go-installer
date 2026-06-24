@@ -60,19 +60,58 @@ function Get-ListenAddress {
     return ":$Port"
 }
 
+function Get-PublicIp {
+    $services = @(
+        "https://api.ipify.org",
+        "https://ifconfig.me/ip",
+        "https://ipinfo.io/ip"
+    )
+    foreach ($service in $services) {
+        try {
+            $ip = (Invoke-WebRequest -Uri $service -UseBasicParsing -TimeoutSec 5 -Headers @{ "User-Agent" = "ddns-go-installer" }).Content.Trim()
+            if ($ip -match "^\d{1,3}(\.\d{1,3}){3}$") {
+                return $ip
+            }
+        } catch {
+            continue
+        }
+    }
+    return $null
+}
+
 function Get-WebUrl {
     $listenAddress = Get-ListenAddress
+    $effectivePort = $Port
+    if ($listenAddress -match ":(\d+)$") {
+        $effectivePort = [int]$Matches[1]
+    }
+
     if ($listenAddress.StartsWith(":")) {
-        return "http://localhost:$Port"
+        $publicIp = Get-PublicIp
+        if (-not [string]::IsNullOrWhiteSpace($publicIp)) {
+            return "http://${publicIp}:$effectivePort"
+        }
+        return "http://<server-ip>:$effectivePort"
     }
     if ($listenAddress.StartsWith("0.0.0.0:")) {
-        return "http://localhost:$Port"
+        $publicIp = Get-PublicIp
+        if (-not [string]::IsNullOrWhiteSpace($publicIp)) {
+            return "http://${publicIp}:$effectivePort"
+        }
+        return "http://<server-ip>:$effectivePort"
     }
     $hostPart = ($listenAddress -replace ":\d+$", "").Trim("[", "]")
+    if ($hostPart -eq "::") {
+        $publicIp = Get-PublicIp
+        if (-not [string]::IsNullOrWhiteSpace($publicIp)) {
+            return "http://${publicIp}:$effectivePort"
+        }
+        return "http://<server-ip>:$effectivePort"
+    }
     if ([string]::IsNullOrWhiteSpace($hostPart)) {
         $hostPart = "localhost"
     }
-    return "http://${hostPart}:$Port"
+    return "http://${hostPart}:$effectivePort"
 }
 
 function Get-AssetName {

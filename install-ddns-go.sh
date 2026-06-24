@@ -104,8 +104,26 @@ get_listen_addr() {
   fi
 }
 
+get_public_ip() {
+  local ip service
+  command -v curl >/dev/null 2>&1 || return 1
+  for service in \
+    "https://api.ipify.org" \
+    "https://ifconfig.me/ip" \
+    "https://ipinfo.io/ip"; do
+    ip="$(curl -fsSL --max-time 5 -H 'User-Agent: ddns-go-installer' "$service" 2>/dev/null | tr -d '[:space:]' || true)"
+    case "$ip" in
+      [0-9]*.[0-9]*.[0-9]*.[0-9]*)
+        printf '%s' "$ip"
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
 get_web_url() {
-  local listen host
+  local listen host port public_ip
   listen="$(get_listen_addr)"
   case "$listen" in
     :*) host="<server-ip>" ;;
@@ -115,7 +133,20 @@ get_web_url() {
   esac
   host="${host#[}"
   host="${host%]}"
-  printf 'http://%s:%s' "$host" "$PORT"
+  case "$listen" in
+    *:*) port="${listen##*:}" ;;
+    *) port="$PORT" ;;
+  esac
+  port="${port%]}"
+
+  case "$host" in
+    "<server-ip>"|"0.0.0.0"|"::")
+      public_ip="$(get_public_ip || true)"
+      [ -n "$public_ip" ] && host="$public_ip"
+      ;;
+  esac
+
+  printf 'http://%s:%s' "$host" "$port"
 }
 
 choose_from_menu() {
