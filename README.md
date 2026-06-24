@@ -156,7 +156,7 @@ sudo ./install-ddns-go.sh
 不推荐使用：
 
 ```bash
-curl -fsSL URL | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh | sudo bash
 ```
 
 因为脚本包含上下键交互菜单，管道运行可能影响终端输入。
