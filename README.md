@@ -26,7 +26,7 @@ Interactive one-click installer for [ddns-go](https://github.com/jeessy2/ddns-go
 Recommended:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
+curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
 chmod +x install-ddns-go.sh
 sudo ./install-ddns-go.sh
 ```
@@ -148,7 +148,7 @@ Default Linux config path:
 推荐方式：
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
+curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
 chmod +x install-ddns-go.sh
 sudo ./install-ddns-go.sh
 ```
