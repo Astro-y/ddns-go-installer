@@ -107,7 +107,12 @@ get_listen_addr() {
 get_effective_port() {
   local listen port
   listen="$(get_listen_addr)"
-  port="$(get_effective_port)"
+  case "$listen" in
+    *:*) port="${listen##*:}" ;;
+    *) port="$PORT" ;;
+  esac
+  port="${port%]}"
+  [ -n "$port" ] || port="$PORT"
   printf '%s' "$port"
 }
 
@@ -571,6 +576,12 @@ binary_path_for_target() {
   esac
 }
 
+restart_ddns_go_service() {
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl restart ddns-go >/dev/null 2>&1 || true
+  fi
+}
+
 run_install_service() {
   local target="$1"
   local binary
@@ -588,6 +599,7 @@ run_install_service() {
       ;;
     *)
       "$binary" -s install -l "$(get_listen_addr)" -f "$INTERVAL" -c "$CONFIG_PATH"
+      restart_ddns_go_service
       ;;
   esac
 }

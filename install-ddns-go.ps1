@@ -430,6 +430,10 @@ function Get-BinaryPath {
     return Join-Path $InstallDir "ddns-go"
 }
 
+function Restart-DdnsGoService {
+    Restart-Service -Name "ddns-go" -ErrorAction SilentlyContinue
+}
+
 function Install-ServiceOrPrintHint {
     param(
         [string]$Target,
@@ -438,6 +442,7 @@ function Install-ServiceOrPrintHint {
     $binary = Get-BinaryPath -Target $Target
     if ($Target.StartsWith("windows_")) {
         & $binary -s install -l (Get-ListenAddress) -f $Interval -c $EffectiveConfig
+        Restart-DdnsGoService
         return
     }
     Write-Host "$Target was selected. Service installation is skipped in PowerShell."
