@@ -60,6 +60,47 @@ function Get-ListenAddress {
     return ":$Port"
 }
 
+function Get-EffectivePort {
+    $listenAddress = Get-ListenAddress
+    if ($listenAddress -match ":(\d+)\]?$") {
+        return [int]$Matches[1]
+    }
+    return $Port
+}
+
+function Get-LanIp {
+    try {
+        $addresses = [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() |
+            Where-Object { $_.OperationalStatus -eq [System.Net.NetworkInformation.OperationalStatus]::Up } |
+            ForEach-Object { $_.GetIPProperties().UnicastAddresses } |
+            Where-Object {
+                $_.Address.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork -and
+                -not [System.Net.IPAddress]::IsLoopback($_.Address) -and
+                -not $_.Address.ToString().StartsWith("169.254.")
+            } |
+            ForEach-Object { $_.Address.ToString() }
+        return @($addresses | Select-Object -First 1)[0]
+    } catch {
+        return $null
+    }
+}
+
+function Get-LanUrl {
+    $ip = Get-LanIp
+    if ([string]::IsNullOrWhiteSpace($ip)) {
+        return $null
+    }
+    $effectivePort = Get-EffectivePort
+    return "http://${ip}:$effectivePort"
+}
+
+function Write-AccessUrls {
+    Write-Host "Open: $(Get-WebUrl)"
+    $lanUrl = Get-LanUrl
+    if (-not [string]::IsNullOrWhiteSpace($lanUrl)) {
+        Write-Host "      $lanUrl"
+    }
+}
 function Get-PublicIp {
     $services = @(
         "https://api.ipify.org",
@@ -81,10 +122,7 @@ function Get-PublicIp {
 
 function Get-WebUrl {
     $listenAddress = Get-ListenAddress
-    $effectivePort = $Port
-    if ($listenAddress -match ":(\d+)$") {
-        $effectivePort = [int]$Matches[1]
-    }
+    $effectivePort = Get-EffectivePort
 
     if ($listenAddress.StartsWith(":")) {
         $publicIp = Get-PublicIp
@@ -506,7 +544,7 @@ function Invoke-InstallOrUpdate {
 
     Write-Host ""
     Write-Host "ddns-go $Action finished."
-    Write-Host "Open: $(Get-WebUrl)"
+    Write-AccessUrls
     Write-Host "Config: $effectiveConfig"
 }
 
@@ -542,7 +580,7 @@ function Show-Status {
         & $binary -v
     }
     Get-Service -Name "ddns-go" -ErrorAction SilentlyContinue | Format-List Name,Status,StartType
-    Write-Host "Web: $(Get-WebUrl)"
+    Write-AccessUrls
 }
 
 $resolvedCommand = Resolve-Command

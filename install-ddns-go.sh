@@ -104,6 +104,50 @@ get_listen_addr() {
   fi
 }
 
+get_effective_port() {
+  local listen port
+  listen="$(get_listen_addr)"
+  port="$(get_effective_port)"
+  printf '%s' "$port"
+}
+
+get_lan_ip() {
+  local ip
+  if command -v hostname >/dev/null 2>&1; then
+    for ip in $(hostname -I 2>/dev/null || true); do
+      case "$ip" in
+        127.*|169.254.*|::1|fe80:*|"") continue ;;
+        *:*) continue ;;
+        *.*.*.*) printf '%s' "$ip"; return 0 ;;
+      esac
+    done
+  fi
+
+  if command -v ip >/dev/null 2>&1; then
+    ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }')"
+    case "$ip" in
+      127.*|169.254.*|"") return 1 ;;
+      *.*.*.*) printf '%s' "$ip"; return 0 ;;
+    esac
+  fi
+
+  return 1
+}
+
+get_lan_url() {
+  local ip port
+  ip="$(get_lan_ip || true)"
+  [ -n "$ip" ] || return 1
+  port="$(get_effective_port)"
+  printf 'http://%s:%s' "$ip" "$port"
+}
+
+print_access_urls() {
+  local lan_url
+  echo "Open: $(get_web_url)"
+  lan_url="$(get_lan_url || true)"
+  [ -n "$lan_url" ] && echo "      ${lan_url}"
+}
 get_public_ip() {
   local ip service
   command -v curl >/dev/null 2>&1 || return 1
@@ -133,11 +177,7 @@ get_web_url() {
   esac
   host="${host#[}"
   host="${host%]}"
-  case "$listen" in
-    *:*) port="${listen##*:}" ;;
-    *) port="$PORT" ;;
-  esac
-  port="${port%]}"
+  port="$(get_effective_port)"
 
   case "$host" in
     "<server-ip>"|"0.0.0.0"|"::")
@@ -644,7 +684,7 @@ install_or_update() {
 
   echo
   echo "ddns-go ${action} finished."
-  echo "Open: $(get_web_url)"
+  print_access_urls
   echo "Config: ${CONFIG_PATH}"
 }
 
@@ -685,7 +725,7 @@ show_status() {
   if command -v systemctl >/dev/null 2>&1; then
     systemctl status ddns-go --no-pager || true
   fi
-  echo "Web: $(get_web_url)"
+  print_access_urls
 }
 
 parse_args() {
