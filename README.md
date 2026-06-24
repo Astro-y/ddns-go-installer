@@ -23,15 +23,15 @@ Interactive one-click installer for [ddns-go](https://github.com/jeessy2/ddns-go
 
 ### Quick Start
 
-Recommended:
+```bash
+curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh && chmod +x install-ddns-go.sh && sudo ./install-ddns-go.sh
+```
 
 ```bash
 curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
 chmod +x install-ddns-go.sh
 sudo ./install-ddns-go.sh
 ```
-
-Do not use `curl | bash` for the interactive installer, because the script needs terminal input for arrow-key menus.
 
 ### Linux Usage
 
@@ -145,21 +145,15 @@ Default Linux config path:
 
 ### 快速开始
 
-推荐方式：
+```bash
+curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh && chmod +x install-ddns-go.sh && sudo ./install-ddns-go.sh
+```
 
 ```bash
 curl -fLO https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh
 chmod +x install-ddns-go.sh
 sudo ./install-ddns-go.sh
 ```
-
-不推荐使用：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Astro-y/ddns-go-installer/main/install-ddns-go.sh | sudo bash
-```
-
-因为脚本包含上下键交互菜单，管道运行可能影响终端输入。
 
 ### Linux 用法
 
